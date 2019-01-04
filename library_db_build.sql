@@ -39,7 +39,8 @@ INSERT INTO tbl_borrower
 		('connor werner', '9712 san carlos lane', '780-985-9632'),
 		('travis taylor', '9998 tunnel dr', '304-650-9874'),
 		('leyla sutton', '44 cooper dr', '452-785-2456'),
-		('sharon ray', '751 yukon dr', '606-852-7412')
+		('sharon ray', '751 yukon dr', '606-852-7412'),
+		('leigh smith', '4466 coper dr', '459-745-2486')
 	;
 
 CREATE TABLE tbl_publisher (
@@ -251,19 +252,17 @@ where book_title = 'the lost tribe' and branch_name = 'sharpstown'
 create procedure dbo.uspLostTribeCopies
 as
 select tbl_book.book_title, tbl_library_branch.branch_name, tbl_book_copies.amount_copies
-from tbl_library_branch 
-inner join tbl_book_loan on tbl_library_branch.branch_id = tbl_book_loan.branch_id
-inner join tbl_book on tbl_book_loan.book_id = tbl_book.book_id
-inner join tbl_book_copies on tbl_book.book_id = tbl_book_copies.book_id
+from tbl_library_branch
+inner join tbl_book_copies on tbl_library_branch.branch_id = tbl_book_copies.branch_id
+inner join tbl_book on tbl_book_copies.book_id = tbl_book.book_id
 where book_title = 'the lost tribe'
 
 --Procedure 3 -I do not know how to write this query
 create procedure dbo.uspNoCheckouts
 as
-select tbl_borrower.borrower_name
+select borrower_name 
 from tbl_borrower
-inner join tbl_book_loan on tbl_borrower.borrower_id = tbl_book_loan.borrower_id
-where date_due < '1/3/2019'
+where not exists (select book_id from tbl_book_loan where borrower_id = tbl_borrower.borrower_id)
 
 --Procedure 4
 create procedure dbo.uspSharpstownDue
@@ -272,8 +271,7 @@ select tbl_book.book_title, tbl_borrower.borrower_name, tbl_borrower.borrower_ad
 from tbl_book_loan
 inner join tbl_book on tbl_book_loan.book_id = tbl_book.book_id
 inner join tbl_borrower on tbl_book_loan.borrower_id = tbl_borrower.borrower_id
-where date_due = '1/3/2019'
-;
+where date_due = '1/8/2019'
 
 --Procedure 5
 create procedure dbo.uspLoanTotals
@@ -282,18 +280,17 @@ select tbl_library_branch.branch_name, count(tbl_book_loan.book_id)
 from tbl_library_branch 
 inner join tbl_book_loan on tbl_library_branch.branch_id = tbl_book_loan.branch_id
 inner join tbl_book on tbl_book_loan.book_id = tbl_book.book_id
-where date_due >= '1/3/2019'
+where tbl_book_loan.book_id is not null
 group by tbl_library_branch.branch_name
 
 --Procedure 6
 create procedure dbo.uspMoreThanFiveBooks
 as
 select tbl_borrower.borrower_name, tbl_borrower.borrower_address, count(tbl_book_loan.book_id)
-from tbl_book_loan
-inner join tbl_book on tbl_book_loan.book_id = tbl_book.book_id
-inner join tbl_borrower on tbl_book_loan.borrower_id = tbl_borrower.borrower_id
-where count(tbl_book_loan.book_id) > 5
-;
+from tbl_borrower
+inner join tbl_book_loan on tbl_borrower.borrower_id = tbl_book_loan.borrower_id
+group by tbl_borrower.borrower_name, tbl_borrower.borrower_address
+having count(tbl_book_loan.book_id) > 5
 
 --Procedure 7
 create procedure dbo.uspLostTribeSharpstown
@@ -302,4 +299,4 @@ select count(tbl_book.book_title)
 from tbl_library_branch 
 inner join tbl_book_loan on tbl_library_branch.branch_id = tbl_book_loan.branch_id
 inner join tbl_book on tbl_book_loan.book_id = tbl_book.book_id
-where book_title = 'the lost tribe' and branch_name = 'sharpstown'
+where book_title = 'the lost tribe' and branch_name = 'central'
